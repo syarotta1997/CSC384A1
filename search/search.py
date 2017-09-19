@@ -208,7 +208,35 @@ def retrieve_solution(route):
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    from util import PriorityQueue
+    sequence = PriorityQueue()
+    #adding the start node as a list of tuple
+    #(state,action,cost) to the queue for convenient retrieval    
+    sequence.push([(problem.getStartState(),'None',0)],0) 
+    # a dictionary storing seen states and the min cost to that stage
+    seen = {problem.getStartState():0}; 
+    
+    while not sequence.isEmpty():
+        print "in while loop:"
+        cur_route = sequence.pop()
+        print cur_route[0]
+        # Here I retrieve the current state (x,y) from the state tuple in form (state,action,cost)
+        cur_state = cur_route[-1][0] 
+        
+        if cost(cur_route) <= seen[cur_state]:
+            if problem.isGoalState(cur_state):
+                print "solution reached with", cur_route
+                return retrieve_direction(cur_route)
+            
+            for successor in problem.getSuccessors(cur_state):
+                new_state = cur_route + [successor]
+                # Path check to eliminate and state that has been visited
+                if not successor[0] in seen or cost(new_state) < seen[successor[0]]: 
+                    new_priority = (-1)*(cost(new_state) + successor[-1])
+                    sequence.push(new_state,new_priority)
+                    seen[successor[0]] = cost(new_state)
+         
+    return False #return False upon no solution found
 
 def nullHeuristic(state, problem=None):
     """
