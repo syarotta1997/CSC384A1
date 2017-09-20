@@ -103,8 +103,6 @@ def depthFirstSearch(problem):
         
         cur_route = sequence.pop()
         cur_action = actions.pop()
-        print cur_route
-        print cur_action
         # Here I retrieve the current state (x,y) from the state tuple list
         cur_state = cur_route[-1] 
         
@@ -152,10 +150,94 @@ def breadthFirstSearch(problem):
                     sequence.push(new_state)
                     seen[successor[0]] = cost(new_state)
     return False #return False upon no solution found
+
+
+def uniformCostSearch(problem):
+    """Search the node of least total cost first."""
+    "*** YOUR CODE HERE ***"
+    from util import PriorityQueue
+    sequence = PriorityQueue()
+    #adding the start node as a list of tuple
+    #(state,action,cost) to the queue for convenient retrieval    
+    sequence.push([(problem.getStartState(),'None',0)],0) 
+    # a dictionary storing seen states and the min cost to that stage
+    seen = {problem.getStartState():0}; 
+    
+    while not sequence.isEmpty():
+        cur_route = sequence.pop()
+        # Here I retrieve the current state (x,y) from the state tuple in form (state,action,cost)
+        cur_state = cur_route[-1][0] 
+        
+        if cost(cur_route) <= seen[cur_state]:
+            if problem.isGoalState(cur_state):
+                print "solution reached with", cur_route
+                return retrieve_direction(cur_route)
+            
+            for successor in problem.getSuccessors(cur_state):
+                new_state = cur_route + [successor]
+                # Path check to eliminate and state that has been visited
+                if not successor[0] in seen or cost(new_state) < seen[successor[0]]: 
+                    new_priority = cost(new_state)
+                    sequence.push(new_state,new_priority)
+                    seen[successor[0]] = cost(new_state)
+         
+    return False #return False upon no solution found
+
+def nullHeuristic(state, problem=None):
+    """
+    A heuristic function estimates the cost from the current state to the nearest
+    goal in the provided SearchProblem.  This heuristic is trivial.
+    """
+    return 0
+
+def aStarSearch(problem, heuristic=nullHeuristic):
+    """Search the node that has the lowest combined cost and heuristic first."""
+    "*** YOUR CODE HERE ***"
+    from util import PriorityQueue
+    sequence = PriorityQueue()
+    # Computing h(start state)
+    init_heuristic = heuristic(problem.getStartState(),problem)
+    # F-value = 0 + h(start state), here we are storing the f - value as the priority
+    #adding the start node as a list of tuple
+    #(state,action,cost) to the queue for convenient retrieval    
+    sequence.push([(problem.getStartState(),'None',0)], 0 + init_heuristic) 
+    # a dictionary storing seen states and the min-f value to that stage
+    seen = {problem.getStartState():0 + init_heuristic}; 
+    
+    while not sequence.isEmpty():
+        cur_route = sequence.pop()
+        # Here I retrieve the current state (x,y) from the state tuple in form (state,action,cost)
+        cur_state = cur_route[-1][0] 
+        # Computing the new heuristic and f-value for the current state
+        cur_state_heuristic = heuristic(cur_state,problem)
+        cur_state_fvalue = cost(cur_route) + cur_state_heuristic
+        
+        if cur_state_fvalue <= seen[cur_state]:
+            if problem.isGoalState(cur_state):
+                print "solution reached with", cur_route
+                return retrieve_direction(cur_route)
+            
+            for successor in problem.getSuccessors(cur_state):
+                new_state = cur_route + [successor]
+                new_state_heuristic = heuristic(successor[0],problem)
+                new_state_fvalue = cost(new_state) + new_state_heuristic
+                # Path check to eliminate and state that has been visited
+                if not successor[0] in seen or new_state_fvalue < seen[successor[0]]: 
+                    new_priority = new_state_fvalue
+                    sequence.push(new_state,new_priority)
+                    seen[successor[0]] = new_state_fvalue
+         
+    return False #return False upon no solution found
+
+#======================================================================
+# Below are my 3 helper functions
+#======================================================================
 def cost(route):
     """
     A helper function that counts and return the total cost of the given route from the start state to the given state
     NOTE: every element in route has the form ((state),action,cost), so retrieving element[-1] will do.
+    
+    route: a sequence of ((state),action,cost)
     """
     cost = 0;
     for states in route:
@@ -167,22 +249,24 @@ def retrieve_direction(route):
     A helper funciton for BFS which takes the given solution route in form of 
     ((state, action, cost)...) and retrieves needed direction info and
     returns a list of actions to perform, using the retrieve_solution funciton below.
-    """
-    from game import Directions  
     
+    route: a sequence of ((state),action,cost)
+    """
     directions = []
     
     for node in route: # Here since I know the index of solution direction is the 
-                               # second of the tuple, therefore retrieving index 1 will do. 
+                       # second of the tuple, therefore retrieving index 1 will do. 
         directions.append(node[1])
     print directions
     return retrieve_solution(directions)    
 
 def retrieve_solution(route):
     """
-    A helper funciton which takes the given solution route in form of 
-    (direction) and retrieves needed direction info and
+    A helper funciton which takes the given solution sequence in form of 
+    [direction] and retrieves needed direction info and
     returns a list of actions to perform.
+    
+    route: a sequence of ((state),action,cost)
     """
     from game import Directions  
     
@@ -204,51 +288,6 @@ def retrieve_solution(route):
         solution.append(direction)
     print "SOLUTION",solution
     return solution
-
-def uniformCostSearch(problem):
-    """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    from util import PriorityQueue
-    sequence = PriorityQueue()
-    #adding the start node as a list of tuple
-    #(state,action,cost) to the queue for convenient retrieval    
-    sequence.push([(problem.getStartState(),'None',0)],0) 
-    # a dictionary storing seen states and the min cost to that stage
-    seen = {problem.getStartState():0}; 
-    
-    while not sequence.isEmpty():
-        print "in while loop:"
-        cur_route = sequence.pop()
-        print cur_route[0]
-        # Here I retrieve the current state (x,y) from the state tuple in form (state,action,cost)
-        cur_state = cur_route[-1][0] 
-        
-        if cost(cur_route) <= seen[cur_state]:
-            if problem.isGoalState(cur_state):
-                print "solution reached with", cur_route
-                return retrieve_direction(cur_route)
-            
-            for successor in problem.getSuccessors(cur_state):
-                new_state = cur_route + [successor]
-                # Path check to eliminate and state that has been visited
-                if not successor[0] in seen or cost(new_state) < seen[successor[0]]: 
-                    new_priority = (-1)*(cost(new_state) + successor[-1])
-                    sequence.push(new_state,new_priority)
-                    seen[successor[0]] = cost(new_state)
-         
-    return False #return False upon no solution found
-
-def nullHeuristic(state, problem=None):
-    """
-    A heuristic function estimates the cost from the current state to the nearest
-    goal in the provided SearchProblem.  This heuristic is trivial.
-    """
-    return 0
-
-def aStarSearch(problem, heuristic=nullHeuristic):
-    """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
 
 # Abbreviations
