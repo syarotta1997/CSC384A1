@@ -217,9 +217,8 @@ def uniformCostSearch(problem):
     seen = {problem.getStartState():0}; 
     
     while not sequence.isEmpty():
-        print "in while loop:"
         cur_route = sequence.pop()
-        print cur_route[0]
+        print "current end state:",cur_route[-1][0]
         # Here I retrieve the current state (x,y) from the state tuple in form (state,action,cost)
         cur_state = cur_route[-1][0] 
         
@@ -233,7 +232,7 @@ def uniformCostSearch(problem):
                 # Path check to eliminate and state that has been visited
                 if not successor[0] in seen or cost(new_state) < seen[successor[0]]: 
                     new_priority = (-1)*(cost(new_state) + successor[-1])
-                    sequence.push(new_state,new_priority)
+                    sequence.update(new_state,new_priority)
                     seen[successor[0]] = cost(new_state)
          
     return False #return False upon no solution found
