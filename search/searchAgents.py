@@ -288,21 +288,33 @@ class CornersProblem(search.SearchProblem):
         # Please add any code here which you would like to use
         # in initializing the problem
         "*** YOUR CODE HERE ***"
-
+        # My abstract state representation: ((x,y),[corner map state])
+        # Idea: initialize corner map same as self.corners, when ever
+        # a corner is visited, change that tuple to an int 1 (by type casting)
+        self.starts = (self.startingPosition,self.corners)     
+            
     def getStartState(self):
         """
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.starts
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        map_state = state[1]
+        isGoal = True        
+        
+        for corners in map_state:
+            # If the type for the corner is still a tuple
+            # I know for sure that this corner has not yet been reached
+            if type(corners) == tuple:
+                isGoal = False
+        return isGoal
 
     def getSuccessors(self, state):
         """
@@ -314,8 +326,8 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-
         successors = []
+        
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
             # Here's a code snippet for figuring out whether a new position hits a wall:
@@ -325,8 +337,27 @@ class CornersProblem(search.SearchProblem):
             #   hitsWall = self.walls[nextx][nexty]
 
             "*** YOUR CODE HERE ***"
-
+            #NOTE: state is in form ((x,y),[corner map])
+            x,y = state[0]
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            hitsWall = self.walls[nextx][nexty]
+            # Need to type cast the corner map for modifications
+            corner_map = list(state[1])
+            
+            if not hitsWall:
+    
+                new_state = (nextx,nexty)
+                # If the current successor is one of the unexplored corner,
+                # change the corner coordinate in corner_map to 1 to indicates
+                # this corner has been visited
+                if new_state in corner_map:
+                    corner_map[corner_map.index(new_state)] = 1
+                # Add successor state in form of ((x,y),[corner map])
+                successors.append(((new_state,tuple(corner_map)), action, 1))
+                    
         self._expanded += 1 # DO NOT CHANGE
+            
         return successors
 
     def getCostOfActions(self, actions):
