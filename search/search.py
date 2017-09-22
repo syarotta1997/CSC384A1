@@ -108,7 +108,7 @@ def depthFirstSearch(problem):
         
         if problem.isGoalState(cur_state):
             print "Solution reached with:", cur_action
-            return retrieve_solution(cur_action)
+            return cur_action[1:]
         
         for successor in problem.getSuccessors(cur_state):
             # Path check to eliminate and state that has been visited
@@ -258,37 +258,7 @@ def retrieve_direction(route):
     for node in route: # Here since I know the index of solution direction is the 
                        # second of the tuple, therefore retrieving index 1 will do. 
         directions.append(node[1])
-    print directions
-    return retrieve_solution(directions)    
-
-def retrieve_solution(route):
-    """
-    A helper funciton which takes the given solution sequence in form of 
-    [direction] and retrieves needed direction info and
-    returns a list of actions to perform.
-    
-    route: a sequence of ((state),action,cost)
-    """
-    from game import Directions  
-    
-    solution = []
-    
-    for direction in route:
-        if direction == 'South' :
-            direction = Directions.SOUTH
-        elif direction == 'North':
-            direction = Directions.NORTH
-        elif direction == 'East':
-            direction = Directions.EAST
-        elif direction == 'West':
-            direction = Directions.WEST
-        else:
-            continue # Here I use continue because I know this 
-                     # condition will only be met when getting action "None" from the initial state.
-                     # And that no action is available to get to the initial state.
-        solution.append(direction)
-    return solution
-
+    return directions[1:]   
 
 # Abbreviations
 bfs = breadthFirstSearch

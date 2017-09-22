@@ -288,10 +288,22 @@ class CornersProblem(search.SearchProblem):
         # Please add any code here which you would like to use
         # in initializing the problem
         "*** YOUR CODE HERE ***"
-        # My abstract state representation: ((x,y),[corner map state])
-        # Idea: initialize corner map same as self.corners, when ever
-        # a corner is visited, change that tuple to an int 1 (by type casting)
-        self.starts = (self.startingPosition,self.corners)     
+        """ 
+        My abstract state representation: ((x,y),[corner map state])
+        Idea: initialize corner map same as self.corners, whenever
+        a corner is visited, change that tuple to an int 1 (by type casting)
+        """
+        #Corner case handle, in case pacman starts at a corner
+        if self.startingPosition in self.corners:
+            corner_map = list(self.corners)
+            index = corner_map.index(self.startingPosition)
+            corner_map[index] = 1
+            self.starts = (self.startingPosition,tuple(corner_map))
+            
+        else:
+            # if pac man does not start at a corner, simply register
+            # self.corner as the initial corner map
+            self.starts = (self.startingPosition,self.corners)     
             
     def getStartState(self):
         """
