@@ -179,7 +179,6 @@ class PositionSearchProblem(search.SearchProblem):
                     __main__._display.drawExpandedCells(self._visitedlist) #@UndefinedVariable
 
         return isGoal
-
     def getSuccessors(self, state):
         """
         Returns successor states, the actions they require, and a cost of 1.
@@ -202,11 +201,78 @@ class PositionSearchProblem(search.SearchProblem):
                 cost = self.costFn(nextState)
                 successors.append( ( nextState, action, cost) )
 
-        # Bookkeeping for display purposes
-        self._expanded += 1 # DO NOT CHANGE
-        if state not in self._visited:
-            self._visited[state] = True
-            self._visitedlist.append(state)
+        return successors
+
+    def getCostOfActions(self, actions):
+        """
+        Returns the cost of a particular sequence of actions. If those actions
+        include an illegal move, return 999999.
+        """
+        if actions == None: return 999999
+        x,y= self.getStartState()
+        cost = 0
+        for action in actions:
+            # Check figure out the next state and see whether its' legal
+            dx, dy = Actions.directionToVector(action)
+            x, y = int(x + dx), int(y + dy)
+            if self.walls[x][y]: return 999999
+            cost += self.costFn((x,y))
+        return cost    
+    
+class PositionSearchProblem_alter(search.SearchProblem):
+    """
+    A search problem defines the state space, start state, goal test, successor
+    function and cost function.  This search problem can be used to find paths
+    to a particular point on the pacman board.
+
+    The state space consists of (x,y) positions in a pacman game.
+
+    Note: this search problem is fully specified; you should NOT change it.
+    """
+
+    def __init__(self, walls, start, goal,costFn = lambda x: 1):
+        """
+        Stores the start and goal.
+
+        gameState: A GameState object (pacman.py)
+        costFn: A function from a search state (tuple) to a non-negative number
+        goal: A position in the gameState
+        """
+        self.walls = walls
+        self.startState = start
+        self.goal = goal
+        self.costFn = costFn
+
+
+    def getStartState(self):
+        return self.startState
+
+    def isGoalState(self, state):
+        isGoal = state == self.goal
+
+        return isGoal
+
+    def getSuccessors(self, state):
+        """
+        Returns successor states, the actions they require, and a cost of 1.
+
+         As noted in search.py:
+             For a given state, this should return a list of triples,
+         (successor, action, stepCost), where 'successor' is a
+         successor to the current state, 'action' is the action
+         required to get there, and 'stepCost' is the incremental
+         cost of expanding to that successor
+        """
+
+        successors = []
+        for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
+            x,y = state
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            if not self.walls[nextx][nexty]:
+                nextState = (nextx, nexty)
+                cost = self.costFn(nextState)
+                successors.append( ( nextState, action, cost) )
 
         return successors
 
@@ -558,25 +624,32 @@ def foodHeuristic(state, problem):
     problem.heuristicInfo['wallCount']
 
     """
-    
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
     foodList = foodGrid.asList()
-    gstate = problem.getGameState()
+    walls = problem.walls.asList()
+    #gstate = problem.getGameState()
     heuristic = 0
-    if problem.isGoalState(state):
+    if len(foodList) == 0:
         return heuristic
     
     points = []
+    nearest = (9999999,foodList[0])
+    furthest = (0,foodList[0])
+    
     for food in foodList:
-        #dist = manhattanDistance(position,food)
-        dist = mazeDistance(position,food,gstate)
-        points.append((dist,food))
-    nearest = min(points)[1]
-    furthest = max(points)[1]
+        dist = manhattanDistance(position,food)
+        if dist < nearest[0]:
+            nearest = (dist,food)
+        if dist > furthest[0]:
+            furthest = (dist,food)
         
-    #heuristic += manhattanDistance(nearest, position) + manhattanDistance(furthest, nearest)
-    heuristic = mazeDistance(nearest,position,gstate) + mazeDistance(furthest,nearest,gstate)
+            
+    #prob = PositionSearchProblem_alter(problem.walls,nearest[1], furthest[1])
+    #length = len(search.bfs(prob))
+        
+    heuristic += nearest[0] + manhattanDistance(furthest[1],nearest[1])
+    #heuristic += nearest[0] + length
     return heuristic    
 
 class ClosestDotSearchAgent(SearchAgent):
@@ -608,7 +681,7 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return search.bfs(problem)
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -644,7 +717,7 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return state in self.food.asList();
 
 def mazeDistance(point1, point2, gameState):
     """
