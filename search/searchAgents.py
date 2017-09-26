@@ -40,7 +40,7 @@ from game import Actions
 import util
 import time
 import search
-
+from util import manhattanDistance
 class GoWestAgent(Agent):
     "An agent that goes West until it can't."
 
@@ -403,7 +403,69 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    '''
+    Algorithm idea:
+    - Interested in finding a h(n) such that it is the max of the lower bound of the true optimal cost: h*(n)
+    - Eventually the best h(n) I can find for reaching one corner is just adding the x,y distance from current position
+      to the corner, in this case I can guarantee that h(n) <= h*(n) for h(n) to be admissible
+    - Then my heuristic must calculate such h(n) for each of the unvisited corners in the following order:
+                    - distance to reach the nearest corner from the current position,
+                       then update current position to this corner
+                    - distance to next nearest corner, updates current position to this corner
+                    - repeat above until all my corners are visited (i.e. goal state is reached)
+                    - sum up all the distances, and that would be my final h(state)
+    - To achieve above I've applied the priority queue using the h(n) for reaching each corner as the priority
+    - NOTE: state representation: ((x,y),(1,1,1,(corner))), where 1 = corner visited, (corner) = unvisited corner xy
+    '''
+    from util import PriorityQueue
+    from util import manhattanDistance
+    #retrieving current state completion map
+    state_corner = state[1]
+    #initialize a priority queue to process unvisited corners
+    corner_to_visit = PriorityQueue()
+    #a list to keep track of unvisited corners
+    corner_left = []
+    cur_pos = state[0]
+    #Initial heuristic is 0, such that if given state is already goal state, 0 will be returned
+    heuristic = 0
+    '''
+    FOR LOOP:
+    - retrieve each corner from the initial problem and see if it is unvisited
+    - if not, append to queue with distance as priority
+    - also appends the corner to corner left for later references
+    '''
+    for corner in corners:
+        if corner in state_corner:
+            corner_to_visit.push((corner),manhattanDistance(cur_pos,corner))
+            corner_left.append(corner)
+
+    while not corner_to_visit.isEmpty():
+        cur_corner = corner_to_visit.pop()
+        # Since this corner is now being processed, remove from unvisited list
+        corner_left.remove(cur_corner)
+        heuristic += manhattanDistance(cur_pos,cur_corner)
+        cur_pos = cur_corner
+        # Here I am clearing the queue heap in order to re-append unvisited corners with new priority
+        # priorityqueue.update() won't work here because of its given behavior 
+        corner_to_visit.heap = []
+        for leftover in corner_left:
+            corner_to_visit.push((leftover),manhattanDistance(cur_pos,leftover))
+            
+    return heuristic
+
+
+def distance(position,corner):
+    '''
+    A helper function for cornersHeuristic that takes current position (x,y) and calculates and returns the
+    straight x distance + y distance to the given corner
+    '''
+    pos_x = position[0]
+    pos_y = position[1]   
+    corner_x = corner[0]
+    corner_y = corner[1]
+    dis_x = abs(pos_x - corner_x)
+    dis_y = abs(pos_y - corner_y)
+    return dis_x + dis_y
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -429,6 +491,9 @@ class FoodSearchProblem:
 
     def getStartState(self):
         return self.start
+    
+    def getGameState(self):
+        return self.startingGameState    
 
     def isGoalState(self, state):
         return state[1].count() == 0
@@ -493,9 +558,26 @@ def foodHeuristic(state, problem):
     problem.heuristicInfo['wallCount']
 
     """
+    
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    foodList = foodGrid.asList()
+    gstate = problem.getGameState()
+    heuristic = 0
+    if problem.isGoalState(state):
+        return heuristic
+    
+    points = []
+    for food in foodList:
+        #dist = manhattanDistance(position,food)
+        dist = mazeDistance(position,food,gstate)
+        points.append((dist,food))
+    nearest = min(points)[1]
+    furthest = max(points)[1]
+        
+    #heuristic += manhattanDistance(nearest, position) + manhattanDistance(furthest, nearest)
+    heuristic = mazeDistance(nearest,position,gstate) + mazeDistance(furthest,nearest,gstate)
+    return heuristic    
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"

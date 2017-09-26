@@ -107,7 +107,6 @@ def depthFirstSearch(problem):
         cur_state = cur_route[-1] 
         
         if problem.isGoalState(cur_state):
-            print "Solution reached with:", cur_action
             return cur_action[1:]
         
         for successor in problem.getSuccessors(cur_state):
@@ -141,7 +140,6 @@ def breadthFirstSearch(problem):
         if cost(cur_route) <= seen[cur_state]:
             
             if problem.isGoalState(cur_state):
-                print "solution reached with", cur_route
                 return retrieve_direction(cur_route)
             
             for successor in problem.getSuccessors(cur_state):
@@ -171,7 +169,6 @@ def uniformCostSearch(problem):
         
         if cost(cur_route) <= seen[cur_state]:
             if problem.isGoalState(cur_state):
-                print "solution reached with", cur_route
                 return retrieve_direction(cur_route)
             
             for successor in problem.getSuccessors(cur_state):
@@ -215,7 +212,6 @@ def aStarSearch(problem, heuristic=nullHeuristic):
         
         if cur_state_fvalue <= seen[cur_state]:
             if problem.isGoalState(cur_state):
-                print "solution reached with", cur_route
                 return retrieve_direction(cur_route)
             
             for successor in problem.getSuccessors(cur_state):
