@@ -100,7 +100,6 @@ def depthFirstSearch(problem):
     actions.push(["None"])
     
     while not sequence.isEmpty():
-        
         cur_route = sequence.pop()
         cur_action = actions.pop()
         # Here I retrieve the current state (x,y) from the state tuple list
@@ -227,7 +226,7 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     return False #return False upon no solution found
 
 #======================================================================
-# Below are my 3 helper functions
+# Below are my helper functions
 #======================================================================
 def cost(route):
     """

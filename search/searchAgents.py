@@ -219,79 +219,6 @@ class PositionSearchProblem(search.SearchProblem):
             cost += self.costFn((x,y))
         return cost    
     
-class PositionSearchProblem_alter(search.SearchProblem):
-    """
-    A search problem defines the state space, start state, goal test, successor
-    function and cost function.  This search problem can be used to find paths
-    to a particular point on the pacman board.
-
-    The state space consists of (x,y) positions in a pacman game.
-
-    Note: this search problem is fully specified; you should NOT change it.
-    """
-
-    def __init__(self, walls, start, goal,costFn = lambda x: 1):
-        """
-        Stores the start and goal.
-
-        gameState: A GameState object (pacman.py)
-        costFn: A function from a search state (tuple) to a non-negative number
-        goal: A position in the gameState
-        """
-        self.walls = walls
-        self.startState = start
-        self.goal = goal
-        self.costFn = costFn
-
-
-    def getStartState(self):
-        return self.startState
-
-    def isGoalState(self, state):
-        isGoal = state == self.goal
-
-        return isGoal
-
-    def getSuccessors(self, state):
-        """
-        Returns successor states, the actions they require, and a cost of 1.
-
-         As noted in search.py:
-             For a given state, this should return a list of triples,
-         (successor, action, stepCost), where 'successor' is a
-         successor to the current state, 'action' is the action
-         required to get there, and 'stepCost' is the incremental
-         cost of expanding to that successor
-        """
-
-        successors = []
-        for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
-            x,y = state
-            dx, dy = Actions.directionToVector(action)
-            nextx, nexty = int(x + dx), int(y + dy)
-            if not self.walls[nextx][nexty]:
-                nextState = (nextx, nexty)
-                cost = self.costFn(nextState)
-                successors.append( ( nextState, action, cost) )
-
-        return successors
-
-    def getCostOfActions(self, actions):
-        """
-        Returns the cost of a particular sequence of actions. If those actions
-        include an illegal move, return 999999.
-        """
-        if actions == None: return 999999
-        x,y= self.getStartState()
-        cost = 0
-        for action in actions:
-            # Check figure out the next state and see whether its' legal
-            dx, dy = Actions.directionToVector(action)
-            x, y = int(x + dx), int(y + dy)
-            if self.walls[x][y]: return 999999
-            cost += self.costFn((x,y))
-        return cost
-
 class StayEastSearchAgent(SearchAgent):
     """
     An agent for position search with a cost function that penalizes being in
@@ -519,20 +446,6 @@ def cornersHeuristic(state, problem):
             
     return heuristic
 
-
-def distance(position,corner):
-    '''
-    A helper function for cornersHeuristic that takes current position (x,y) and calculates and returns the
-    straight x distance + y distance to the given corner
-    '''
-    pos_x = position[0]
-    pos_y = position[1]   
-    corner_x = corner[0]
-    corner_y = corner[1]
-    dis_x = abs(pos_x - corner_x)
-    dis_y = abs(pos_y - corner_y)
-    return dis_x + dis_y
-
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
     def __init__(self):
@@ -557,9 +470,6 @@ class FoodSearchProblem:
 
     def getStartState(self):
         return self.start
-    
-    def getGameState(self):
-        return self.startingGameState    
 
     def isGoalState(self, state):
         return state[1].count() == 0
@@ -626,14 +536,30 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
+    """
+    The idea is inspried by test case 15 that all food lies in the same line
+    In this case the heuristic is not always the shorest dist from cur_pos to
+    the closestest food.(e.g. in case 15 the optimal solution would be to go
+    downwards at first instead of going to eat the nearest dot)
+    So that former heuristic in Q6 becomes non-admissible as it always adds cur_pos dist to 
+    the nearest point
+    But still we want to find a distance, lower bound to the true optimal cost
+    Some thing we are sure of: Starting with pacman looking for a nearest food, once it has
+    travelled to the nearest food, it still *at least* have to travel a distance from the nearest
+    food it has reached to the furthest food from its cur_position
+    then a sloppy heuristic can just be the estimated dist from pacman position to its nearest food,
+    plus the dist from the nearest food to the furtherest food.
+    This heuristic will be admissible because it does not care about cases with walls (which guarantees the
+    dist is of the minimum by using manhattanDistance).
+    """
+    #initializing
     foodList = foodGrid.asList()
-    walls = problem.walls.asList()
-    #gstate = problem.getGameState()
     heuristic = 0
-    if len(foodList) == 0:
+    #returns heuristic at 0 if a goal has reached
+    if problem.isGoalState(state):
         return heuristic
-    
-    points = []
+    #Initializing two points for finding nearest and furthest food
+    #FORM: (distiance from cur_pos to food,(x,y))
     nearest = (9999999,foodList[0])
     furthest = (0,foodList[0])
     
@@ -642,14 +568,10 @@ def foodHeuristic(state, problem):
         if dist < nearest[0]:
             nearest = (dist,food)
         if dist > furthest[0]:
-            furthest = (dist,food)
-        
-            
-    #prob = PositionSearchProblem_alter(problem.walls,nearest[1], furthest[1])
-    #length = len(search.bfs(prob))
+            furthest = (dist,food)      
         
     heuristic += nearest[0] + manhattanDistance(furthest[1],nearest[1])
-    #heuristic += nearest[0] + length
+    
     return heuristic    
 
 class ClosestDotSearchAgent(SearchAgent):
